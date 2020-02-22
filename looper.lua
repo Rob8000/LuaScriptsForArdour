@@ -105,6 +105,22 @@ local input_notes_to_output_channel_map = {}
 local total_notes = 127
 local total_midi_out = 7
 local channelIsActive = {}
+
+function dsp_params ()
+	local tableToReturn = {};
+	for i = 1, 64 do
+		tableToReturn[i] = 
+		{ ["type"] = "input", name = "" .. i, min = 0, max = 4, default = 0, enum = true, scalepoints =
+			{
+				["Loop@Beat"] = 0,
+				["Loop@Note"] = 1,
+				["Play"] = 2,
+			}
+		}
+	end
+
+	return tableToReturn
+end
 function dsp_init (rate)
 	
 	self:shmem():allocate(total_notes)
@@ -261,7 +277,7 @@ function dsp_runmap (bufs, in_map, out_map, n_samples, offset)
 		--		state[note] = midi_notes_state[note]
 		--		self:queue_draw ()
 			end
-			if(input_notes_to_output_channel_map[note] == i and  midi_notes_state[note]) == 1 then
+			if(input_notes_to_output_channel_map[note] == i and  (midi_notes_state[note] == 1 or midi_notes_state[note] == 3)) then
 				doSingleChannelNoLoop(bufs, in_map, out_map, n_samples, timeAsAnOffset - modOffset  , i-1 , 0,midiData.midi)
 			end
 		end
@@ -284,6 +300,10 @@ function render_inline (ctx, w, max_h)
 	local heightOfBox = h /8 
 	local shmem = self:shmem()
 	local state = shmem:to_int(0):array()
+	ctx:rectangle (0,0,w,h)
+	ctx:set_source_rgba (0,0,0,1.0)
+	--rint(widthOfBox)
+	ctx:fill ()
 	for i = 0,7 do
 	for j = 0,7 do
 		--print(i*8 + j)
@@ -303,7 +323,7 @@ function render_inline (ctx, w, max_h)
 	end
 	if state[i*8 + j + 1 + 20] == 3 then
 		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
-		ctx:set_source_rgba (0.3, 0.3, 0.3,  0.5)
+		ctx:set_source_rgba (1.0, 1.0 , 1.0,  0.5)
 		--rint(widthOfBox)
 		ctx:fill ()
 	end
