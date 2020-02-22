@@ -3,12 +3,12 @@ ardour {
 	name        = "Midi Looper",
 	category    = "Midi", 
 	license     = "Who knows",
-	author      = "R",
+	author      = "R8000",
 	description = [[A script that will play midi sequences on a loop triggered by a midi device]]
 }
 
 function dsp_ioconfig ()
-	return { {midi_in = 1, midi_out = 7, audio_in = 0, audio_out = 0}, }
+	return { {midi_in = 1, midi_out = 7, audio_in = -1, audio_out = -1}, }
 end
 local firstBar = 0
 local tme = 0 -- sample-counter
@@ -106,7 +106,11 @@ local total_notes = 127
 local total_midi_out = 7
 local channelIsActive = {}
 function dsp_init (rate)
+	
+	self:shmem():allocate(total_notes)
+	self:shmem():clear()
 	local bpm = 120
+
 	rateO = rate
 	spb = rate * 60 / bpm
 	samplesPerBar = spb * beatsInABar
@@ -135,17 +139,11 @@ function load_midi_from_ranges ()
 
 	  local all_regions = ARDOUR.RegionFactory.regions()
 	  local count = 1
-	  print "got here dude!"
 	  for _, r in all_regions:iter() do
-		  print "also got here!"
 		  local mr = r:to_midiregion ()
-		  	print "and here!"
 			if mr:isnil () then goto next end
-			print "and also here?"
 			if string.starts(r:name(), "loop") then
-			        print "got a loop!"
 				local nl = ARDOUR.LuaAPI.note_list (mr:model ()) 
-				print "got a note list!"
 				local midiName = "midi_sequence" .. count
 				local newMidi = {};
 				local noteCount = 1
@@ -167,7 +165,6 @@ function load_midi_from_ranges ()
 				  count = count + 1 
 			
 			end
-			print "got here"
 			::next::
 		end	
 
@@ -202,6 +199,13 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 			local noteVal = table[2]
 			if(table[1] == 144) then --on
 			 midi_notes_state_at_next_bar[noteVal] = (midi_notes_state_at_next_bar[noteVal] + 1) % 2	
+			 if(midi_notes_state_at_next_bar[noteVal] == 1 and midi_notes_state[noteVal] == 0) then
+			   local shmem = self:shmem()
+			   local state = shmem:to_int(0):array()
+			   midi_notes_state[noteVal] = 2
+			   state[noteVal] = midi_notes_state[noteVal]
+			   self:queue_draw ()
+			 end
 			 end
 --		print (e:channel (), e:time (), e:size (), e:buffer():array (), e:buffer ():get_table (e:size ())[1], e:buffer():get_table (e:size ())[2], e:buffer():get_table (e:size())[3])
 		 
@@ -214,7 +218,9 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 		--else
 		currentOffset = currentSample %  samplesPerBar
 		--end
-		for i = 59, 70 do
+		local shmem = self:shmem()
+		local state = shmem:to_int(0):array()
+		for i = 1, 70 do
 	--		 if(midi_notes_state[i] == 0 and midi_notes_state_at_next_bar[i] == 1) then
 	--		 channelIsActive[input_notes_to_output_channel_map[i]] = channelIsActive[input_notes_to_output_channel_map[i]] + 1
 	--	 	 end
@@ -222,6 +228,9 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 	--		 channelIsActive[input_notes_to_output_channel_map[i]] = channelIsActive[input_notes_to_output_channel_map[i]] - 1
 	--	         end
 			 midi_notes_state[i] = midi_notes_state_at_next_bar[i] 
+			 state[i] = midi_notes_state[i]
+			 self:queue_draw ()
+			 
 		end
 	end
 
@@ -239,7 +248,11 @@ function dsp_runmap (bufs, in_map, out_map, n_samples, offset)
 		if((timeAsAnOffset >= modOffset  and timeAsAnOffset < modOffset + n_samples)) then
 		for note = 1, total_notes do
 			if(modOffset < 0) then
+		--		local shmem = self:shmem()
+		--		local state = shmem:to_int(0):array()
 				midi_notes_state[note] = midi_notes_state_at_next_bar[note]
+		--		state[note] = midi_notes_state[note]
+		--		self:queue_draw ()
 			end
 			if(input_notes_to_output_channel_map[note] == i and  midi_notes_state[note]) == 1 then
 				doSingleChannelNoLoop(bufs, in_map, out_map, n_samples, timeAsAnOffset - modOffset  , i-1 , 0,midiData.midi)
@@ -252,5 +265,39 @@ function dsp_runmap (bufs, in_map, out_map, n_samples, offset)
 	currentOffset = currentOffset + n_samples
 	currentSample = currentSample + n_samples
       	
+
+end
+function render_inline (ctx, w, max_h)
+	if (w > max_h) then
+		h = max_h
+	else
+		h = w
+	end
+	local widthOfBox = w /8 
+	local heightOfBox = h /8 
+	local shmem = self:shmem()
+	local state = shmem:to_int(0):array()
+	for i = 0,7 do
+	for j = 0,7 do
+		--print(i*8 + j)
+	--print(state[i*8 + j + 1])
+	--temporary punt up the location
+	if state[i*8 +  j + 1 + 1] == 1 then
+		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
+		ctx:set_source_rgba (0,i * 1/8, j * 1/8,  1.0)
+		--rint(widthOfBox)
+		ctx:fill ()
+	end
+	if state[i*8 +  j + 1 + 1] == 2 then
+		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
+		ctx:set_source_rgba (0.5,i * 1/8, j * 1/8,  0.5)
+		--rint(widthOfBox)
+		ctx:fill ()
+	end
+	end 
+	end
+
+
+	return {w, h}
 
 end
