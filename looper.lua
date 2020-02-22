@@ -206,6 +206,13 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 			   state[noteVal] = midi_notes_state[noteVal]
 			   self:queue_draw ()
 			 end
+			 if(midi_notes_state_at_next_bar[noteVal] == 0  and midi_notes_state[noteVal] == 1) then
+			   local shmem = self:shmem()
+			   local state = shmem:to_int(0):array()
+			   midi_notes_state[noteVal] = 3
+			   state[noteVal] = midi_notes_state[noteVal]
+			   self:queue_draw ()
+			 end
 			 end
 --		print (e:channel (), e:time (), e:size (), e:buffer():array (), e:buffer ():get_table (e:size ())[1], e:buffer():get_table (e:size ())[2], e:buffer():get_table (e:size())[3])
 		 
@@ -220,7 +227,7 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 		--end
 		local shmem = self:shmem()
 		local state = shmem:to_int(0):array()
-		for i = 1, 70 do
+		for i = 1, 127 do
 	--		 if(midi_notes_state[i] == 0 and midi_notes_state_at_next_bar[i] == 1) then
 	--		 channelIsActive[input_notes_to_output_channel_map[i]] = channelIsActive[input_notes_to_output_channel_map[i]] + 1
 	--	 	 end
@@ -282,15 +289,21 @@ function render_inline (ctx, w, max_h)
 		--print(i*8 + j)
 	--print(state[i*8 + j + 1])
 	--temporary punt up the location
-	if state[i*8 +  j + 1 + 1] == 1 then
+	if state[i*8 +  j + 1 + 20] == 1 then
 		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
-		ctx:set_source_rgba (0,i * 1/8, j * 1/8,  1.0)
+		ctx:set_source_rgba ((j % 3) * 1 / 2, ((j + 1) % 3) * 1 / 2, ((j + 2)  % 3) * 1 / 2,  1.0)
 		--rint(widthOfBox)
 		ctx:fill ()
 	end
-	if state[i*8 +  j + 1 + 1] == 2 then
+	if state[i*8 + j + 1 + 20] == 2 then
 		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
-		ctx:set_source_rgba (0.5,i * 1/8, j * 1/8,  0.5)
+		ctx:set_source_rgba ((j % 3) * 1 / 4, ((j + 1) % 3) * 1 / 4, ((j + 2)  % 3) * 1 / 4,  0.5)
+		--rint(widthOfBox)
+		ctx:fill ()
+	end
+	if state[i*8 + j + 1 + 20] == 3 then
+		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
+		ctx:set_source_rgba (0.3, 0.3, 0.3,  0.5)
 		--rint(widthOfBox)
 		ctx:fill ()
 	end
