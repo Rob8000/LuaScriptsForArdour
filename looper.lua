@@ -1,6 +1,6 @@
 ardour {
 	["type"]    = "dsp",
-	name        = "Midi Looper",
+	name        = "Midi Pad Looper",
 	category    = "Midi", 
 	license     = "Who knows",
 	author      = "R8000",
@@ -8,7 +8,7 @@ ardour {
 }
 
 function dsp_ioconfig ()
-	return { {midi_in = 1, midi_out = 2, audio_in = -1, audio_out = -1}, }
+	return { {midi_in = 1, midi_out = 3, audio_in = -1, audio_out = -1}, }
 end
 local firstBar = 0
 local tme = 0 -- sample-counter
@@ -20,6 +20,139 @@ local currentOffset = 0
 local beatsInABar = 4
 local samplesPerBar = 0
 --assuming 4 beats per bar
+local mappingBack = {}
+mappingBack[	20	] = 	64
+mappingBack[	21	] = 	65
+mappingBack[	22	] = 	66
+mappingBack[	23	] = 	67
+mappingBack[	24	] = 	68
+mappingBack[	64	] = 	18
+mappingBack[	63	] = 	17
+mappingBack[	9	] = 	71
+mappingBack[	10	] = 	72
+mappingBack[	11	] = 	73
+mappingBack[	12	] = 	74
+mappingBack[	13	] = 	75
+mappingBack[	14	] = 	76
+mappingBack[	15	] = 	77
+mappingBack[	16	] = 	78
+mappingBack[	61	] = 	15
+mappingBack[	62	] = 	16
+mappingBack[	1	] = 	81
+mappingBack[	2	] = 	82
+mappingBack[	3	] = 	83
+mappingBack[	4	] = 	84
+mappingBack[	5	] = 	85
+mappingBack[	6	] = 	86
+mappingBack[	7	] = 	87
+mappingBack[	8	] = 	88
+mappingBack[	53	] = 	25
+mappingBack[	54	] = 	26
+mappingBack[	55	] = 	27
+mappingBack[	56	] = 	28
+mappingBack[	60	] = 	14
+mappingBack[	59	] = 	13
+mappingBack[	41	] = 	31
+mappingBack[	42	] = 	32
+mappingBack[	43	] = 	33
+mappingBack[	44	] = 	34
+mappingBack[	45	] = 	35
+mappingBack[	46	] = 	36
+mappingBack[	47	] = 	37
+mappingBack[	48	] = 	38
+mappingBack[	58	] = 	12
+mappingBack[	57	] = 	11
+mappingBack[	33	] = 	41
+mappingBack[	34	] = 	42
+mappingBack[	35	] = 	43
+mappingBack[	36	] = 	44
+mappingBack[	37	] = 	45
+mappingBack[	38	] = 	46
+mappingBack[	39	] = 	47
+mappingBack[	40	] = 	48
+mappingBack[	52	] = 	24
+mappingBack[	51	] = 	23
+mappingBack[	25	] = 	51
+mappingBack[	26	] = 	52
+mappingBack[	27	] = 	53
+mappingBack[	28	] = 	54
+mappingBack[	29	] = 	55
+mappingBack[	30	] = 	56
+mappingBack[	31	] = 	57
+mappingBack[	32	] = 	58
+mappingBack[	50	] = 	22
+mappingBack[	49	] = 	21
+mappingBack[	17	] = 	61
+mappingBack[	18	] = 	62
+mappingBack[	19	] = 	63
+
+local launchPadMappings = {}
+ launchPadMappings[ 81 ] =  1
+ launchPadMappings[ 82 ] =  2
+ launchPadMappings[ 83 ] =  3
+ launchPadMappings[ 84 ] =  4
+ launchPadMappings[ 85 ] =  5
+ launchPadMappings[ 86 ] =  6
+ launchPadMappings[ 87 ] =  7
+ launchPadMappings[ 88 ] =  8
+ launchPadMappings[ 71 ] =  9
+ launchPadMappings[ 72 ] =  10
+ launchPadMappings[ 73 ] =  11
+ launchPadMappings[ 74 ] =  12
+ launchPadMappings[ 75 ] =  13
+ launchPadMappings[ 76 ] =  14
+ launchPadMappings[ 77 ] =  15
+ launchPadMappings[ 78 ] =  16
+ launchPadMappings[ 61 ] =  17
+ launchPadMappings[ 62 ] =  18
+ launchPadMappings[ 63 ] =  19
+ launchPadMappings[ 64 ] =  20
+ launchPadMappings[ 65 ] =  21
+ launchPadMappings[ 66 ] =  22
+ launchPadMappings[ 67 ] =  23
+ launchPadMappings[ 68 ] =  24
+ launchPadMappings[ 51 ] =  25
+ launchPadMappings[ 52 ] =  26
+ launchPadMappings[ 53 ] =  27
+ launchPadMappings[ 54 ] =  28
+ launchPadMappings[ 55 ] =  29
+ launchPadMappings[ 56 ] =  30
+ launchPadMappings[ 57 ] =  31
+ launchPadMappings[ 58 ] =  32
+ launchPadMappings[ 41 ] =  33
+ launchPadMappings[ 42 ] =  34
+ launchPadMappings[ 43 ] =  35
+ launchPadMappings[ 44 ] =  36
+ launchPadMappings[ 45 ] =  37
+ launchPadMappings[ 46 ] =  38
+ launchPadMappings[ 47 ] =  39
+ launchPadMappings[ 48 ] =  40
+ launchPadMappings[ 31 ] =  41
+ launchPadMappings[ 32 ] =  42
+ launchPadMappings[ 33 ] =  43
+ launchPadMappings[ 34 ] =  44
+ launchPadMappings[ 35 ] =  45
+ launchPadMappings[ 36 ] =  46
+ launchPadMappings[ 37 ] =  47
+ launchPadMappings[ 38 ] =  48
+ launchPadMappings[ 21 ] =  49
+ launchPadMappings[ 22 ] =  50
+ launchPadMappings[ 23 ] =  51
+ launchPadMappings[ 24 ] =  52
+ launchPadMappings[ 25 ] =  53
+ launchPadMappings[ 26 ] =  54
+ launchPadMappings[ 27 ] =  55
+ launchPadMappings[ 28 ] =  56
+ launchPadMappings[ 11 ] =  57
+ launchPadMappings[ 12 ] =  58
+ launchPadMappings[ 13 ] =  59
+ launchPadMappings[ 14 ] =  60
+ launchPadMappings[ 15 ] =  61
+ launchPadMappings[ 16 ] =  62
+ launchPadMappings[ 17 ] =  63
+ launchPadMappings[ 18 ] =  64
+
+
 local midi_sequence1  =  { 
 {time =  1.0 ,midi = { 0x90,  60 , 64 }},
 {time =  1.25 ,midi = { 0x80,  60 , 0 }},
@@ -102,10 +235,12 @@ local allMidi = { midi_sequence1,midi_sequence2,midi_sequence3, midi_sequence4, 
 local midi_notes_state = {}
 local midi_notes_state_at_next_bar = {}
 local input_notes_to_output_channel_map = {}
-local total_notes = 127
+local total_notes = 64 
 local total_midi_out = 7
 local channelIsActive = {}
-
+local redValues = {}
+local greenValues = {}
+local blueValues = {}
 function dsp_params ()
 	local tableToReturn = {};
 	for i = 1, 64 do
@@ -123,8 +258,9 @@ function dsp_params ()
 end
 function dsp_init (rate)
 	
-	self:shmem():allocate(total_notes)
+	self:shmem():allocate(total_notes + 1)
 	self:shmem():clear()
+
 	local tm = Session:tempo_map ()
 	local ts = tm:tempo_section_at_sample (0)
 
@@ -140,11 +276,14 @@ function dsp_init (rate)
 	for i = 1, total_midi_out do
 		channelIsActive[i] = 0
 	end
-	for i = 1, 127 do
+	for i = 1, total_notes do
 		midi_notes_state[i] = 0
 		midi_notes_state_at_next_bar[i] = 0
+		redValues[i] = 0
+		blueValues[i] = 0
+		greenValues[i] = 0
 	end
-	for i = 1, 127 do
+	for i = 1, total_notes do
 		input_notes_to_output_channel_map[i] =  (i % (total_midi_out - 1)) + 2
 	end
 	print "managed to reload!"
@@ -196,8 +335,50 @@ function dsp_dsp_midi_input ()
 	return true
 end
 
+function updateColours(bufs, in_map, out_map, n_samples, offset )
+	ob = out_map:get (ARDOUR.DataType("midi"), 2)
+	if ob ~= ARDOUR.ChanMapping.Invalid then
+		local mb = bufs:get_midi (ob)
+		local ba = C.ByteVector()
+				--ba:add({240,0,32,41,2,24,11,61,0,0,0,247})
+				countOfColourCycles = 0
+			        local shmem = self:shmem()
+				local state = shmem:to_int(0):array()
+				for i = 1, total_notes do
+					local row = i % 8
+					local oldRed = redValues[i]
+					local oldBlue = blueValues[i]
+					local oldGreen = greenValues[i]
+					if(state[i] == 1) then
+						redValues[i] = 9*(row%8);
+						blueValues[i] = 9* ((row+3)%8)
+						greenValues[i] = 9* ((row + 6) % 8)
+					else
+						redValues[i] = 0 
+						blueValues[i] = 0 
+						greenValues[i] = 0 
+					end
+					if(redValues[i] ~= oldRed or blueValues[i] ~= oldBlue or greenValues[i] ~= oldGreen) then
+						--ba:add({240,0,32,41,2,24,14,0,247})
+						ba:add({240,0,32,41,2,24,11, mappingBack[i],redValues[i],blueValues[i], greenValues[i],247})
+						mb:push_back (offset + countOfColourCycles , ba:size (), ba:to_array());
+						ba:clear ()
+						countOfColourCycles = countOfColourCycles + 1
+					end
+				end
+				--ba:add({41,2,24})
+				--mb:push_back (offset + 3 , ba:size (), ba:to_array());
+				--ba:clear ()
+				--ba:add({11,60,30})
+				--mb:push_back (offset + 6 , ba:size (), ba:to_array());
+				--ba:clear ()
+				--ba:add({0,0,247})
+				--mb:push_back (offset + 9 , ba:size (), ba:to_array());
+				--ba:clear ()
+	end
+	-- passthrough audio, apply pin/channel mapping
+end
 function pushMidi (bufs, in_map, out_map, n_samples, offset, midi, sizeOfMidiTable)
-
 	assert (spb > 1)
 	local ob = out_map:get (ARDOUR.DataType ("midi"), 1)
 	if ob ~= ARDOUR.ChanMapping.Invalid then
@@ -206,14 +387,14 @@ function pushMidi (bufs, in_map, out_map, n_samples, offset, midi, sizeOfMidiTab
 			for _,midiData in pairs(midi) do
 				ba:add(midiData.data)
 				mb:push_back (offset + midiData.time, ba:size (), ba:to_array());
-				print(midiData.time)
+				--print(midiData.time)
 				ba:clear ()
 			end
 
 				
     	end		
-	-- passthrough audio, apply pin/channel mapping
-	ARDOUR.DSP.process_map (bufs, in_map, out_map, n_samples, offset, ARDOUR.DataType ("audio"))
+
+	--ARDOUR.DSP.process_map (bufs,ARDOUR.ChanCount(ARDOUR.DataType("midi"),2), in_map, out_map, n_samples, offset)
 end
 
 function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
@@ -224,8 +405,8 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 	 for _, e in pairs (events) do
 		if(e:size () == 3) then
 			local table = e:buffer():get_table(e:size())
-			local noteVal = table[2]
-			if(table[1] == 144) then --on
+			if(table[1] == 144 and (launchPadMappings[table[2]] ~= nil )) then --on
+			local noteVal = launchPadMappings[table[2]]
 			 midi_notes_state_at_next_bar[noteVal] = (midi_notes_state_at_next_bar[noteVal] + 1) % 2	
 			 if(midi_notes_state_at_next_bar[noteVal] == 1 and midi_notes_state[noteVal] == 0) then
 			   local shmem = self:shmem()
@@ -255,7 +436,7 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 		--end
 		local shmem = self:shmem()
 		local state = shmem:to_int(0):array()
-		for i = 59, 70 do
+		for i = 1, 64 do
 	--		 if(midi_notes_state[i] == 0 and midi_notes_state_at_next_bar[i] == 1) then
 	--		 channelIsActive[input_notes_to_output_channel_map[i]] = channelIsActive[input_notes_to_output_channel_map[i]] + 1
 	--	 	 end
@@ -271,7 +452,6 @@ function update_loop_on_or_off (bufs, in_map, out_map, n_samples, offset)
 
 end
 function dsp_runmap (bufs, in_map, out_map, n_samples, offset)
-
 	update_loop_on_or_off(bufs, in_map, out_map, n_samples, offset)
 	local midiToSend = {}
 	local countGoingIn = 0
@@ -284,7 +464,7 @@ function dsp_runmap (bufs, in_map, out_map, n_samples, offset)
 		local timeAsAnOffset = math.floor(midiData.time * samplesPerBar /4.0)
 		local modOffset = ((currentOffset + n_samples) % samplesPerBar) - n_samples
 		if((timeAsAnOffset >= modOffset  and timeAsAnOffset < modOffset + n_samples)) then
-		for note = 59, 70 do
+		for note = 1, 64 do
 			if(modOffset < 0) then
 				midi_notes_state[note] = midi_notes_state_at_next_bar[note]
 			end
@@ -294,14 +474,16 @@ function dsp_runmap (bufs, in_map, out_map, n_samples, offset)
 				table.insert(midiToSend, {time = uniqueTime, data = midiData.midi})
 				countGoingIn = countGoingIn + 1
 			end
+			
 		end
  		end
 	end
  --	end
 	end
 	if(countGoingIn > 0) then
-	pushMidi(bufs, in_map, out_map, n_samples,  offset ,midiToSend, countGoingIn)
+		pushMidi(bufs, in_map, out_map, n_samples,  offset ,midiToSend, countGoingIn)
 	end
+	updateColours(bufs, in_map, out_map, n_samples, offset)
 	currentOffset = currentOffset + n_samples
 	currentSample = currentSample + n_samples
       	
@@ -347,24 +529,24 @@ function render_inline (ctx, w, max_h)
 	ctx:set_source_rgba (0,0,0,1.0)
 	--rint(widthOfBox)
 	ctx:fill ()
-	for i = 0,8 do
+	for i = 0,7 do
 	for j = 0,7 do
 		--print(i*8 + j)
 	--print(state[i*8 + j + 1])
 	--temporary punt up the location
-	if state[j*8 +  i + 1 + 20] == 1 then
+	if state[j*8 +  i  + 1] == 1 then
 		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
-		ctx:set_source_rgba ((j % 3) * 1 / 2, ((j + 1) % 3) * 1 / 2, ((j + 2)  % 3) * 1 / 2,  1.0)
+		ctx:set_source_rgba ((i % 8) * 1 / 7, ((i + 3) % 8) * 1 / 7, ((i + 6)  % 8) * 1 / 7,  1.0)
 		--rint(widthOfBox)
 		ctx:fill ()
 	end
-	if state[j*8 + i + 1 + 20] == 2 then
+	if state[j*8 + i + 1] == 2 then
 		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
-		ctx:set_source_rgba ((j % 3) * 1 / 4, ((j + 1) % 3) * 1 / 4, ((j + 2)  % 3) * 1 / 4,  0.5)
+		ctx:set_source_rgba ((i % 8) * 1 / 4, ((i + 3) % 8) * 1 / 4, ((i + 6)  % 8) * 1 / 4,  0.5)
 		--rint(widthOfBox)
 		ctx:fill ()
 	end
-	if state[j*8 + i + 1 + 20] == 3 then
+	if state[j*8 + i  + 1] == 3 then
 		ctx:rectangle (i * widthOfBox, j*heightOfBox,  widthOfBox, heightOfBox)
 		ctx:set_source_rgba (1.0, 1.0 , 1.0,  0.5)
 		--rint(widthOfBox)
