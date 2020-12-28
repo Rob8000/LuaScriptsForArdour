@@ -8,7 +8,7 @@ ardour {
 }
 
 function dsp_ioconfig ()
-	return { {midi_in = 1, midi_out = 2, audio_in = -1, audio_out = -1}, }
+	return { {midi_in = 1, midi_out = 1, audio_in = -1, audio_out = -1}, }
 end
 
 function dsp_configure(ins, outs)
@@ -54,18 +54,6 @@ function dsp_params ()
 end
 function dsp_init (rate)
 
-	local tm = Session:tempo_map ()
-	local ts = tm:tempo_section_at_sample (0)
-
-	local bpm = ts:to_tempo():note_types_per_minute ()
-
-	rateO = rate
-	spb = rate * 60 / bpm
-	samplesPerBar = spb * beatsInABar
-	print(spb)
-	print(rate)
-	print(samplesPerBar)
-	if spb < 2 then spb = 2 end
 end
 
 function string.starts(String,Start)
@@ -89,7 +77,7 @@ function dsp_run (_, _, n_samples)
 	 end
 	 if(recordOnAtPreviousCheck == 1 and record < 1) then
 		 sizeOfLoop = distanceFromRecordStart
-		 print(sizeOfLoop)
+         --print(sizeOfLoop)
 	 end
 	 recordOnAtPreviousCheck = record
 	 local loop = ctrl[2]
@@ -99,17 +87,22 @@ function dsp_run (_, _, n_samples)
          end
 	 loopOnAtPreviousCheck = loop
 	if(record == 1) then
-	for _,b in pairs (midiin) do
-		local t = b["time"] -- t = [ 1 .. n_samples ]
-		local d = b["data"] -- get midi-event
-		local event_type
-		if #d == 0 then event_type = -1 else event_type = d[1] >> 4 end
+        local m = 1
+        for _,b in pairs (midiin) do
+            local t = b["time"] -- t = [ 1 .. n_samples ]
+            local d = b["data"] -- get midi-event
+            midiout[m] = {}
+            midiout[m]["time"] = t
+            midiout[m]["data"] = d
+            m = m + 1
+            local event_type
+            if #d == 0 then event_type = -1 else event_type = d[1] >> 4 end
 
-		if (#d == 3 ) then -- note on
-			local midiNoteAndTime = {time= t + distanceFromRecordStart, midi= d}
-			table.insert(midi_sequence1, midiNoteAndTime)
-		end
-	end
+            if (#d == 3 ) then -- note on
+                local midiNoteAndTime = {time= t + distanceFromRecordStart, midi= d}
+                table.insert(midi_sequence1, midiNoteAndTime)
+            end
+        end
 	end
 	if(loop == 1) then
 		if(distanceFromLoopStart > sizeOfLoop) then
