@@ -2,7 +2,7 @@ ardour {
 	["type"]    = "dsp",
 	name        = "Midi Record",
 	category    = "Midi", 
-	license     = "Who knows",
+	license     = "GPLv2",
 	author      = "R8000",
 	description = [[hello]]
 }
