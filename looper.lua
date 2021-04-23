@@ -2,7 +2,7 @@ ardour {
 	["type"]    = "dsp",
 	name        = "Midi Pad Looper",
 	category    = "Midi", 
-	license     = "Who knows",
+	license     = "GPLv2",
 	author      = "R8000",
 	description = [[A script that will play midi sequences on a loop triggered by a midi device]]
 }
